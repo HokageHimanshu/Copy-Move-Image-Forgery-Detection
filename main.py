@@ -1,94 +1,75 @@
 import sys
 import cv2
-from ForgeryDetection import Detect
+from CMFDetection import ForgeryDetector
 import re
 from datetime import datetime
 
-def PrintBoundary():
-	for i in range(50):
-		print('*',end='')
-	print()
 
-try:
-	file_name=sys.argv[1]
-except IndexError:
-	print('Enter a path to the image.')
-	sys.exit(0)
+print('Welcome to the Copy Move original_image manipulated_image Detection Application!\n')
+choice = 'y'
+while choice.lower() == 'y':
+	fname  = input('\nEnter the path/name of the original_image = ')
+	fname = fname.rstrip()
+	assert(fname!="")
 
-image=cv2.imread(file_name)
-if image is None:
-	print(file_name)
-	print('Enter Valid File Name/Path.')
-	sys.exit(0)
+	original_image=cv2.imread(fname)
+	# print(original_image)
+	# print(original_image.shape)
 
-eps =60
-min_samples=2
+	if original_image is None:
+		print('File path/name entered by you is ',fname,'\nKindly enter a valid file path')
+		sys.exit(0)
 
-PrintBoundary()
-print('Use \'q\' for exit and\n\'s/S\' for saving the Forgery Detected.')
-PrintBoundary()
-flag=True
+	# eps is in range of (0,500)
+	# min_sample is in range of (0,50)
 
-try:
-	value=sys.argv[2]
+	eps =60
+	min_samples=2
 
-except IndexError:
-	flag=False
-if flag:
-	try:
-		value=int(value)
-		if(value<0 or value> 500):
-			print('Value not in range (0,500)........ using default value.')
-		else:
-			eps= value
-	except ValueError:
-		print('Value not integer........ using default value.')
 
-flag2=True
-try:
-	value=sys.argv[3]
-except IndexError:
-	flag2=False
+	eps = int(input('Enter value of eps (0,500) or 60 for default value = '))
+	min_samples = int(input('Enter value of minimum no of samples (0,50) or 2 for default value = '))
 
-if flag2:
-	try:
-		value=int(value)
-		if(value<0 or value> 50):
-			print('Value not in range (0,50)........ using default value.')
-		else:
-			min_samples= value
-	except ValueError:
-		print('Value not integer........ using default value.')
 
-PrintBoundary()
-print('Detecting Forgery with parameter value as\neps:{}\nmin_samples:{}'.format(eps,min_samples))
-PrintBoundary()
+	print('\nStarting the process of detecting manipulated_image with parameter values as the following')
+	print('Eps = ',eps)
+	print('minimum no. of samples = ',min_samples)
 
-detect=Detect(image)
+	forgery_finder=ForgeryDetector(original_image)
 
-key_points,descriptors = detect.siftDetector()
+	key_points,descriptors = forgery_finder.run_sift_detection()
 
-forgery=detect.locateForgery(eps,min_samples)
-if forgery is None:
-	sys.exit(0)
-cv2.imshow('Original image',image)
-cv2.imshow('Forgery',forgery)
-wait_time=1000
-while(cv2.getWindowProperty('Forgery', 0) >= 0) or (cv2.getWindowProperty('Original image', 0) >= 0) :
+	manipulated_image=forgery_finder.find_forgery(eps,min_samples)
+
+	if manipulated_image is None:
+		sys.exit(0)
+
+	cv2.imwrite('Original.jpg', original_image) 
+	cv2.imwrite('Forged.jpg', manipulated_image) 
+
+	cv2.imshow('Original original_image',original_image)
+	cv2.imshow('manipulated_image',manipulated_image)
+	cv2.imshow('SIFT features',forgery_finder.show_sift_features())
+
+	wait_time=10000
 	keyCode = cv2.waitKey(wait_time)
-	if (keyCode) == ord('q') or keyCode==ord('Q'):
-		cv2.destroyAllWindows()
-		break
-	elif keyCode == ord('s') or keyCode ==ord('S'):
-		name=re.findall(r'(.+?)(\.[^.]*$|$)',file_name)
-		date=datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
-		new_file_name=name[0][0]+'_'+str(eps)+'_'+str(min_samples)
-		new_file_name=new_file_name+'_'+date+name[0][1]
-		PrintBoundary()
+	cv2.destroyAllWindows()
+	choice = input('Enter (y/Y) to continue = ')
+	# if choice.lower()=='y':
+	# 	continue
+	# else:
 		
-		vaue=cv2.imwrite(new_file_name,forgery)
-		print('Image Saved as....',new_file_name)
-
-cv2.destroyAllWindows()
-
-
+	# while(cv2.getWindowProperty('manipulated_image', 0) >= 0) or (cv2.getWindowProperty('Original original_image', 0) >= 0) :
+	# 	keyCode = cv2.waitKey(wait_time)
+	# 	if (keyCode) == ord('q') or keyCode==ord('Q'):
+	# 		cv2.destroyAllWindows()
+	# 		break
+	# 	elif keyCode == ord('s') or keyCode ==ord('S'):
+	# 		name=re.findall(r'(.+?)(\.[^.]*$|$)',fname)
+	# 		date=datetime.today().strftime('%Y_%m_%d_%H_%M_%S')
+	# 		new_fname=name[0][0]+'_'+str(eps)+'_'+str(min_samples)
+	# 		new_fname=new_fname+'_'+date+name[0][1]
+	# 		PrintBoundary()
+			
+	# 		vaue=cv2.imwrite(new_fname,manipulated_image)
+	# 		print('original_image Saved as....',new_fname)
