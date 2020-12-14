@@ -85,7 +85,7 @@ def plot_graph(titles,images,fname):
 	    	c.axis('off')
 	    	if index<n:
 		        c.imshow(images[index])
-		        c.set_title(titles[index],size=8)
+		        c.set_title(titles[index],size=5)
 		        # c.text(0.5,-0.1,titles[index], size=10, ha="center")
 		        # c.axis('off')
 		        index+=1
