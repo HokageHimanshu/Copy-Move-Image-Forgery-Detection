@@ -21,30 +21,39 @@ def show_sift_features(original_image,key_points,descriptors):
     # sift_original_image=cv2.drawMatches(self.original_image,self.key_points,self.original_image.copy())
     return sift_original_image
 
-def find_clusters(clusters,size,key_points):
+def find_clusters(clusters,size,keypts):
 	cluster_list= [[] for i in range(size)]
-	for idx in range(len(key_points)):
-	    if clusters.labels_[idx]!=-1:
-	        cluster_list[clusters.labels_[idx]].append((int(key_points[idx].pt[0]),int(key_points[idx].pt[1])))
+	n = len(keypts)
+	for idx in range(n):
+		index = clusters.labels_[idx]
+		if index != -1:
+			pt1 = keypts[idx].pt[0]
+			pt2 = keypts[idx].pt[1]
+			cluster_list[index].append((int(pt1),int(pt2)))
 	return cluster_list
 
 def draw_line(cluster_list,manipulated_image):
 	for points in cluster_list:
-	    if len(points)>1:
-	        for idx1 in range(1,len(points)):
-	            cv2.line(manipulated_image,points[0],points[idx1],(255,255,255),2)
+		n = len(points)
+		if n >1:
+			for idx1 in range(1,n):
+				color = (255,255,255)
+				line_width = 2
+				cv2.line(manipulated_image,points[0],points[idx1],color,line_width)
 	return manipulated_image
 
 def find_forgery(original_image,key_points,descriptors,eps=40,min_sample=2):
-	clusters=DBSCAN(eps=eps, min_samples=min_sample).fit(descriptors)
-	size=np.unique(clusters.labels_).shape[0]-1
+	dbscaner = DBSCAN(min_samples=min_sample,eps=eps)
 	manipulated_image=original_image.copy()
-	if (size==0) and (np.unique(clusters.labels_)[0]==-1):
-		print('No manipulated_image Found!!')
-		# return None
-		return manipulated_image
+	clusters_formed=dbscaner.fit(descriptors)
+	size=np.unique(clusters_formed.labels_).shape[0]
+	size = size-1
+	if (size==0):
+		if (np.unique(clusters_formed.labels_)[0]==-1):
+			print('No Manipulation is found in the image!!')
+			return manipulated_image
 	if size==0:
 		size=1
-	cluster_list=find_clusters(clusters,size,key_points)
+	cluster_list=find_clusters(clusters_formed,size,key_points)
 	manipulated_image = draw_line(cluster_list,manipulated_image)
 	return manipulated_image
