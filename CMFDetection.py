@@ -2,24 +2,28 @@ from sklearn.cluster import DBSCAN
 import numpy as np
 import cv2
 
+
+def single_channel_image(original_image):
+	image_color = cv2.COLOR_BGR2GRAY
+	gray_image= cv2.cvtColor(original_image,image_color) 
+	return gray_image
+
 def run_sift_detection(original_image):
     sift = cv2.xfeatures2d.SIFT_create()
-    # print('sift is')
-    # print(sift)
-    gray= cv2.cvtColor(original_image,cv2.COLOR_BGR2GRAY) 
-    key_points,descriptors = sift.detectAndCompute(gray, None)
-    # print('key_points are ')
-    # print(self.key_points)
-    # print(self.descriptors)
-    # print()
-    return key_points,descriptors
+    gray_image=  single_channel_image(original_image)
+    keypts,descriptors = sift.detectAndCompute(gray_image, None)
+    return keypts,descriptors
 
-def show_sift_features(original_image,key_points,descriptors):
-    gray_original_image=cv2.cvtColor(original_image,cv2.COLOR_BGR2GRAY)
-    temp_image = original_image.copy()
-    sift_original_image=cv2.drawKeypoints(original_image,key_points,temp_image)
-    # sift_original_image=cv2.drawMatches(self.original_image,self.key_points,self.original_image.copy())
-    return sift_original_image
+def mark_keypts(original_image,keypts,copy_image):
+	# radius = 2
+	sift_transformed_image = cv2.drawKeypoints(original_image,keypts,copy_image)
+	return sift_transformed_image
+
+def show_key_features(original_image,keypts,descriptors):
+	gray_original_image=single_channel_image(original_image)
+	temp_image = original_image.copy()
+	sift_original_image= mark_keypts(original_image,keypts,temp_image)
+	return sift_original_image
 
 def find_clusters(clusters,size,keypts):
 	cluster_list= [[] for i in range(size)]
@@ -36,13 +40,16 @@ def draw_line(cluster_list,manipulated_image):
 	for points in cluster_list:
 		n = len(points)
 		if n >1:
+			starting_point = points[0]
 			for idx1 in range(1,n):
-				color = (255,255,255)
-				line_width = 2
-				cv2.line(manipulated_image,points[0],points[idx1],color,line_width)
+				for idx2 in range(1,n):
+					color = (255,255,255)
+					line_width = 2
+					end_point = points[idx1]
+					cv2.line(manipulated_image,starting_point,end_point,color,line_width)
 	return manipulated_image
 
-def find_forgery(original_image,key_points,descriptors,eps=40,min_sample=2):
+def find_forgery(original_image,keypts,descriptors,eps=40,min_sample=2):
 	dbscaner = DBSCAN(min_samples=min_sample,eps=eps)
 	manipulated_image=original_image.copy()
 	clusters_formed=dbscaner.fit(descriptors)
@@ -54,6 +61,6 @@ def find_forgery(original_image,key_points,descriptors,eps=40,min_sample=2):
 			return manipulated_image
 	if size==0:
 		size=1
-	cluster_list=find_clusters(clusters_formed,size,key_points)
+	cluster_list=find_clusters(clusters_formed,size,keypts)
 	manipulated_image = draw_line(cluster_list,manipulated_image)
 	return manipulated_image

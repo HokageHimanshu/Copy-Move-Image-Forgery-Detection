@@ -1,7 +1,5 @@
-import sys
 import cv2
 from CMFDetection import *
-import re
 from sklearn.cluster import DBSCAN
 import numpy as np
 import cv2
@@ -24,7 +22,7 @@ def perform_cmfd(fname,original_image,eps,min_samples,wait_time,saveit=False,sho
 	if showit:
 		cv2.imshow('Original original_image',original_image)
 		cv2.imshow('manipulated_image',manipulated_image)
-		cv2.imshow('SIFT features',show_sift_features(original_image,key_points,descriptors))
+		cv2.imshow('SIFT features',show_key_features(original_image,key_points,descriptors))
 		keyCode = cv2.waitKey(wait_time)
 		cv2.destroyAllWindows()
 	return (original_image,manipulated_image)
